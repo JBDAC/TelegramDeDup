@@ -27,3 +27,9 @@ This Python-based Telegram bot is designed to identify and alert users about dup
 ## Getting Started
 
 Replace `"YOUR_BOT_TOKEN_HERE"` with your actual bot token in the script and execute it in a suitable Python environment. The bot will begin monitoring the chat for duplicate messages and alert as configured.
+
+You need a machine that's connected to the net all the time. Copy the code to a directory such as /scanner/. 
+
+Then run: python TelegramDeDup.py
+
+It will poll the channel over HTTPS for messages and manage duplicaes whilst it's running.
