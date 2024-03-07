@@ -32,4 +32,4 @@ You need a machine that's connected to the net all the time. Copy the code to a 
 
 Then run: python TelegramDeDup.py
 
-It will poll the channel over HTTPS for messages and manage duplicaes whilst it's running.
+It will poll the channel over HTTPS for messages and manage duplicates whilst it's running.
