@@ -17,8 +17,7 @@ from collections import OrderedDict
 #It will not work on large files as the Telegram bot API doesn't allow downloading them.
 #Ver 2: 10/03/2024
 
-#BotToken = "YOUR_BOT_TOKEN_HERE"
-BotToken = "YOUR_TOKEN"
+BotToken = "YOUR_BOT_TOKEN_HERE"
 ChannelUsername = "channel_username"
 ChatUsername = "char_username"
 
