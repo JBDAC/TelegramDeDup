@@ -35,7 +35,7 @@ This Python script introduces a Telegram bot designed to identify and notify abo
 
 3. **Set Privacy Settings**: Use the `/setprivacy` command with BotFather to disable privacy mode, allowing the bot to access all messages.
 
-4. **Give the bot adequate access** Search for your bot by its username in the “Add Member” section of your channel settings, add it, and grant it the necessary permissions for its tasks, such as 'Manage messages'.
+4. **Give the bot adequate access**: Search for your bot by its username in the “Add Member” section of your channel settings, add it, and grant it the necessary permissions for its tasks, such as 'Manage messages'.
 
 5. **Update the python code**: Change `YOUR_BOT_TOKEN_HERE` with the bot token provided by BotFather after creating your bot on Telegram & set the 'channel_username' and 'chat_username'. 
 
