@@ -31,13 +31,17 @@ This Python script introduces a Telegram bot designed to identify and notify abo
     pip install python-telegram-bot aiohttp requests
     ```
 
-2. **Telegram Bot Token**: Replace `YOUR_BOT_TOKEN_HERE` with the bot token provided by BotFather after creating your bot on Telegram & set the 'channel_username' and 'char_username'.
+2. **Telegram Bot Token**: Create a Telegram Bot - message BotFather on Telegram (@BotFather) to create a bot. Use the /newbot command and follow the instructions. Note down the token you receive; it's needed to connect your bot to the Telegram API.Replace
 
 3. **Set Privacy Settings**: Use the `/setprivacy` command with BotFather to disable privacy mode, allowing the bot to access all messages.
 
-4. **Adjust Configuration**: Modify `MIN_TEXT_LENGTH` and `MAX_LIST_ENTRIES` as needed for your specific use case.
+4. **Give the bot adequate access** Search for your bot by its username in the “Add Member” section of your channel settings, add it, and grant it the necessary permissions for its tasks, such as 'Manage messages'.
 
-5. **Run the Bot**: Execute the script. The bot will start listening for messages, identifying duplicates based on configured thresholds.
+5. **Update the python code**: Change `YOUR_BOT_TOKEN_HERE` with the bot token provided by BotFather after creating your bot on Telegram & set the 'channel_username' and 'chat_username'. 
+
+6. **Adjust Configuration**: Modify `MIN_TEXT_LENGTH` and `MAX_LIST_ENTRIES` as needed for your specific use case.
+
+7. **Run the Bot**: Execute the script. The bot will start listening for messages, identifying duplicates based on configured thresholds. It uses https, so it does not require any special port to be opened.
 
 ## How It Works
 
