@@ -22,24 +22,26 @@ This Python script introduces a Telegram bot designed to identify and notify abo
 - `datetime`: Module for manipulating dates and times.
 - `telegram.ext`: Extension module to help make it easier to use the API.
 - `collections.OrderedDict`: Dictionary subclass that remembers the order entries were added.
+- `unidecode`: Module to decode unicode characters to their closest ASCII representation.
 
 ## Setup Instructions
 
 1. **Install Dependencies**: Ensure all required libraries are installed using pip:
 
-    ```
-    pip install python-telegram-bot aiohttp requests
+    ```sh
+    pip install python-telegram-bot aiohttp requests unidecode
     ```
 
-2. **Telegram Bot Token**: Create a Telegram Bot. You can search for BotFather on Telegram (@BotFather) to create a bot. Send the /newbot command as a message and follow the instructions. Note down the token you receive; it's needed to connect your bot to the Telegram API.
+2. **Telegram Bot Token and Usernames**: You will need to have the following details ready:
+   - A Telegram Bot Token: Create a bot by talking to BotFather (@BotFather) on Telegram and following the instructions to get a bot token.
+   - Your channel's username: This is the username of the channel where the bot will monitor for duplicate messages.
+   - Your chat's username: This is the username of the chat where the bot will also monitor for duplicates.
 
 3. **Set Privacy Settings**: Use the `/setprivacy` command with BotFather to disable privacy mode, allowing the bot to access all messages.
 
-4. **Give the bot adequate access**: Search for your bot by its username in the “Add Member” section of your channel settings, add it, and grant it the necessary permissions for its tasks, such as 'Manage messages'.
+4. **Bot Permissions**: Make sure your bot has the necessary permissions in your channel and chat for managing messages.
 
-5. **Update the python code**: Change `YOUR_BOT_TOKEN_HERE` with the bot token provided by BotFather after creating your bot on Telegram & set the 'channel_username' and 'chat_username'. 
-
-6. **Adjust Configuration**: Modify `MIN_TEXT_LENGTH` and `MAX_LIST_ENTRIES` as needed for your specific use case.
+5. **Configuration**: The bot's behavior can be adjusted by setting environment variables or passing arguments directly. Relevant parameters include `MIN_TEXT_LENGTH` and `MAX_LIST_ENTRIES` for tuning the bot's sensitivity and memory usage.
 
 7. **Run the Bot**: Execute the script. The bot will start listening for messages, identifying duplicates based on configured thresholds. It uses https, so it does not require any special port to be opened.
 
@@ -62,3 +64,17 @@ This Python script introduces a Telegram bot designed to identify and notify abo
 
 For more information on the Telegram Bot API and the python-telegram-bot library, consult the [official documentation](https://docs.python-telegram-bot.org/).
 
+## Running the Bot
+
+Execute the script with the necessary command-line arguments for your bot token, channel username, and chat username. Use the following format:
+
+```sh
+python chk4dups.py --token YOUR_BOT_TOKEN_HERE --channel YOUR_CHANNEL_USERNAME --chat YOUR_CHAT_USERNAME
+```
+
+Replace `YOUR_BOT_TOKEN_HERE`, `YOUR_CHANNEL_USERNAME`, and `YOUR_CHAT_USERNAME` with the actual bot token, channel username, and chat username respectively.
+
+
+## License
+
+This project is licensed under the MIT No Attribution license, a 'do anything' license.

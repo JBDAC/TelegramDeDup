@@ -4,10 +4,12 @@ import re
 import logging
 import requests
 import hashlib
+import argparse
 from datetime import datetime
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 from telegram import Update
 from collections import OrderedDict
+from unidecode import unidecode
 
 #https://docs.python-telegram-bot.org/en/stable/telegram.ext.filters.html
 #https://github.com/python-telegram-bot
@@ -15,11 +17,21 @@ from collections import OrderedDict
 #Create a new bot. Use the access token given at creation here, when creating use /setprivacy and 'disable' so as to receive all msgs
 #This code will not look back at prior messages, therefore will only identify duplicates that are posted after it starts.
 #It will not work on large files as the Telegram bot API doesn't allow downloading them.
-#Ver 2: 10/03/2024
+#Ver 2: 11/03/2024
 
-BotToken = "YOUR_BOT_TOKEN_HERE"
-ChannelUsername = "channel_username"
-ChatUsername = "char_username"
+# Set up argument parsing
+parser = argparse.ArgumentParser(description='Telegram Bot for duplicate message detection.')
+parser.add_argument('--token', type=str, required=True, help='Telegram Bot Token')
+parser.add_argument('--channel', type=str, required=True, help='Channel Username')
+parser.add_argument('--chat', type=str, required=True, help='Chat Username')
+
+# Parse arguments
+args = parser.parse_args()
+
+# Assign arguments to variables
+BotToken = args.token
+ChannelUsername = args.channel
+ChatUsername = args.chat
 
 MIN_TEXT_LENGTH = 30  # Example threshold - very short messages, which are more likely to be coincidentally duplicated and less meaningful to check, are ignored
 
@@ -43,12 +55,33 @@ channel_checksums_lock = asyncio.Lock()
 MyUserID = ""
 
 def simplify_text(text):
-    # Remove all non-alphanumeric characters (keeping spaces)
-#    simplified_text = re.sub(r'[^a-zA-Z0-9\s]', '', text)
-    simplified_text = re.sub(r'[^a-zA-Z0-9]', '', text)
-    # Optionally, you might want to convert to lowercase for a case-insensitive comparison
-    simplified_text = simplified_text.lower()
-    return simplified_text
+   # Normalize unicode characters to their closest ASCII representation
+#    print(text)
+    text = unidecode(text)
+    
+    text = text.lower()
+    
+    # Replace common abbreviations and symbols with their "full" words or equivalents
+    substitutions = {
+        "&": "and",
+        "@": "at",
+        "w/": "with",
+        "w/o": "without",
+    }
+    for symbol, replacement in substitutions.items():
+        text = text.replace(symbol, replacement)
+    
+    # Remove URLs
+    text = re.sub(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', '', text)
+    
+    # Remove all non-alphanumeric characters (keeping spaces), use a space to replace them to preserve word boundaries
+    text = re.sub(r'[^a-zA-Z0-9\s]', ' ', text)
+    
+    # Replace multiple spaces with a single space
+    text = re.sub(r'\s+', ' ', text).strip()
+
+#    print(text)
+    return text
 
 async def download_file(url):
     async with aiohttp.ClientSession() as session:
@@ -94,6 +127,8 @@ def generate_unique_file_identifier(message):
 async def handle_media_message(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     message = update.effective_message
     msg_type = MSG_IN_UNKNOWN
+    channelMsgIsDup = False
+    chatMsgIsDup = False
     chat_id = message.chat.id  # Extract the chat ID from the update object
 
     print("========================")
@@ -223,31 +258,45 @@ async def handle_media_message(update: object, context: ContextTypes.DEFAULT_TYP
 
     if msg_type == MSG_IN_CHANNEL:
         async with channel_checksums_lock:
+            if file_key:
+                if file_key in channel_checksums:
+                    channelMsgIsDup = True 
             if item_key in channel_checksums:
-                # Duplicate found
-                await context.bot.send_message(chat_id=chat_id, text=DUP_CHANNEL_MSG, parse_mode='Markdown')
-                print("DUPLICATE in channel! User notified.")
-            else:
-                # Store the checksum or URL for future reference
+                channelMsgIsDup = True 
+
+        if channelMsgIsDup == True:
+            await context.bot.send_message(chat_id=chat_id, text=DUP_CHANNEL_MSG, parse_mode='Markdown')
+            print("DUPLICATE in channel! User notified.")
+        else:
+            # Store the checksum or URL for future reference
+            async with channel_checksums_lock:
                 channel_checksums[item_key] = True
-                print(f"Processed and stored channel item with key: {item_key}")
-                if file_key:
+            print(f"Processed and stored channel item with key: {item_key}")
+            if file_key:
+                async with channel_checksums_lock:
                     channel_checksums[file_key] = True
-                    print(f"Also stored channel item with file_key: {file_key}")
+                print(f"Also stored channel item with file_key: {file_key}")
 
     if msg_type == MSG_IN_CHAT:
         async with chat_checksums_lock:
+            if file_key:
+                if file_key in chat_checksums:
+                    chatMsgIsDup = True 
             if item_key in chat_checksums:
-                # Duplicate found
-                await context.bot.send_message(chat_id=chat_id, text=DUP_CHAT_MSG, parse_mode='Markdown')
-                print("DUPLICATE in chat! User notified.")
-            else:
-                # Store the checksum or URL for future reference
+                chatMsgIsDup = True 
+
+        if chatMsgIsDup == True:
+            await context.bot.send_message(chat_id=chat_id, text=DUP_CHAT_MSG, parse_mode='Markdown')
+            print("DUPLICATE in chat! User notified.")
+        else:
+            # Store the checksum or URL for future reference
+            async with chat_checksums_lock:
                 chat_checksums[item_key] = True
-                print(f"Processed and stored chat item with key: {item_key}")
-                if file_key:
+            print(f"Processed and stored chat item with key: {item_key}")
+            if file_key:
+                async with chat_checksums_lock:
                     chat_checksums[file_key] = True
-                    print(f"Also stored chat item with file_key: {file_key}")
+                print(f"Also stored chat item with file_key: {file_key}")
 
 def get_bot_user_id():
     url = f"https://api.telegram.org/bot{BotToken}/getMe"
