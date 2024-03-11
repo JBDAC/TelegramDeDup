@@ -41,7 +41,7 @@ This Python script introduces a Telegram bot designed to identify and notify abo
 
 4. **Bot Permissions**: Make sure your bot has the necessary permissions in your channel and chat for managing messages.
 
-5. **Configuration**: The bot's behavior can be adjusted by setting environment variables or passing arguments directly. Relevant parameters include `MIN_TEXT_LENGTH` and `MAX_LIST_ENTRIES` for tuning the bot's sensitivity and memory usage.
+5. **Configuration**: The bot's behavior can be adjusted by passing arguments directly. You can also adjust the `MIN_TEXT_LENGTH` and `MAX_LIST_ENTRIES` internally for tuning the bot's sensitivity and memory usage.
 
 7. **Run the Bot**: Execute the script with the necessary command-line arguments to start the bot. It will begin monitoring messages, identifying duplicates based on configured thresholds. The bot communicates over HTTPS, eliminating the need for special port configurations. The command-line parameters required to run the bot are as follows:
 
@@ -70,7 +70,7 @@ This Python script introduces a Telegram bot designed to identify and notify abo
 ## Limitations
 
 - The bot does not retrospectively analyze past messages; it only starts monitoring from the point of activation.
-- Large files are not supported due to Telegram Bot API limitations on downloading size.
+- Although large files are not supported due to Telegram Bot API limitations on downloading size, their metadata is compared.
 
 For more information on the Telegram Bot API and the python-telegram-bot library, consult the [official documentation](https://docs.python-telegram-bot.org/).
 
