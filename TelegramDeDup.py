@@ -16,7 +16,7 @@ from unidecode import unidecode
 #https://docs.python-telegram-bot.org/en/stable/telegram.messageorigin.html
 #Create a new bot. Use the access token given at creation here, when creating use /setprivacy and 'disable' so as to receive all msgs
 #This code will not look back at prior messages, therefore will only identify duplicates that are posted after it starts.
-#It will not work on large files as the Telegram bot API doesn't allow downloading them.
+#For media files, the metadata is checked & only if there is a match here will the file be downloaded to double check. This check will not work on large files as the Telegram bot API doesn't allow downloading them.
 #Ver 2: 11/03/2024
 
 # Set up argument parsing
@@ -125,10 +125,12 @@ def generate_unique_file_identifier(message):
     return unique_identifier
 
 async def handle_media_message(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
-    message = update.effective_message
     msg_type = MSG_IN_UNKNOWN
     channelMsgIsDup = False
     chatMsgIsDup = False
+    doubleCheck = False
+    file_key = None
+    message = update.effective_message
     chat_id = message.chat.id  # Extract the chat ID from the update object
 
     print("========================")
@@ -175,8 +177,6 @@ async def handle_media_message(update: object, context: ContextTypes.DEFAULT_TYP
 
     #Strangely, the file_id changes for each time a user forwards the same file, so we can't just use that as it's not unique
     #so we will combine the metadata & hash that & only if that matches will we attempt to download the file
-    doubleCheck = False
-    file_key = None
     if file_id:     
         item_key = generate_unique_file_identifier(message)
         print(f"Metadata:{item_key}")
@@ -192,27 +192,27 @@ async def handle_media_message(update: object, context: ContextTypes.DEFAULT_TYP
 #        item_key = file_id
 #        item_key = hashlib.sha256(file_id.encode('utf-8')).hexdigest()
 
-    if doubleCheck:
-        # Resource / bandwidth intensive as it needs to download the entire file:
-        print("Metadata duplicate: downloading file to double check!")
-        file_bytes = None
-        try:
-            new_file = await context.bot.get_file(file_id)	#gets path
+        if doubleCheck:
+            # Resource / bandwidth intensive as it needs to download the entire file:
+            print("Metadata duplicate: downloading file to double check!")
+            file_bytes = None
             try:
-                #file_bytes = requests.get(new_file.file_path).content
-                file_bytes = await download_file(new_file.file_path)
-            except requests.exceptions.RequestException as e:
-                print(f"Failed to download file: {e}")
-                file_bytes = None
+                new_file = await context.bot.get_file(file_id)	#gets path
+                try:
+                    #file_bytes = requests.get(new_file.file_path).content
+                    file_bytes = await download_file(new_file.file_path)
+                except requests.exceptions.RequestException as e:
+                    print(f"Failed to download file: {e}")
+                    file_bytes = None
 
-        except Exception as e:
-            print(f"Error fetching file: {e}")
+            except Exception as e:
+                print(f"Error fetching file: {e}")
 
-        if file_bytes:
-            file_key = hashlib.sha256(file_bytes).hexdigest()
-            print(f"Downloaded ok, file_key is: {file_key}")
-        else:
-            print("download failed, skipping this check")
+            if file_bytes:
+                file_key = hashlib.sha256(file_bytes).hexdigest()
+                print(f"Downloaded ok, file_key is: {file_key}")
+            else:
+                print("download failed, skipping this check")
 
     else:
         urls = []
