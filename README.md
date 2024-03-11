@@ -31,7 +31,7 @@ This Python script introduces a Telegram bot designed to identify and notify abo
     pip install python-telegram-bot aiohttp requests
     ```
 
-2. **Telegram Bot Token**: Create a Telegram Bot - message BotFather on Telegram (@BotFather) to create a bot. Use the /newbot command and follow the instructions. Note down the token you receive; it's needed to connect your bot to the Telegram API.Replace
+2. **Telegram Bot Token**: Create a Telegram Bot. You can search for BotFather on Telegram (@BotFather) to create a bot. Send the /newbot command as a message and follow the instructions. Note down the token you receive; it's needed to connect your bot to the Telegram API.
 
 3. **Set Privacy Settings**: Use the `/setprivacy` command with BotFather to disable privacy mode, allowing the bot to access all messages.
 
