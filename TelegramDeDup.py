@@ -24,6 +24,7 @@ parser = argparse.ArgumentParser(description='Telegram Bot for duplicate message
 parser.add_argument('--token', type=str, required=True, help='Telegram Bot Token')
 parser.add_argument('--channel', type=str, required=True, help='Channel Username')
 parser.add_argument('--chat', type=str, required=True, help='Chat Username')
+parser.add_argument('--opmode', type=int, required=True, choices=[0, 1, 2], help='Operation Mode (0: watch, 1: warn, 2: delete)')
 
 # Parse arguments
 args = parser.parse_args()
@@ -32,6 +33,7 @@ args = parser.parse_args()
 BotToken = args.token
 ChannelUsername = args.channel
 ChatUsername = args.chat
+OpMode = args.opmode
 
 MIN_TEXT_LENGTH = 30  # Example threshold - very short messages, which are more likely to be coincidentally duplicated and less meaningful to check, are ignored
 
@@ -41,6 +43,10 @@ MAX_LIST_ENTRIES = 1000
 MSG_IN_UNKNOWN = 0
 MSG_IN_CHANNEL = 1
 MSG_IN_CHAT = 2
+
+MODE_WATCH = 0
+MODE_WARN = 1
+MODE_DELETE = 2
 
 DUP_CHANNEL_MSG = '⚠️ This appears to duplicate an existing message in the *channel*. Please avoid reposting the same content. 😉'
 DUP_CHAT_MSG = '⚠️ This appears to duplicate an existing message in the *chat*. Please avoid reposting the same content. 😉 (Posts to the channel are copied to the chat, posts to the chat are not necessarily copied to the channel.)'
@@ -123,6 +129,20 @@ def generate_unique_file_identifier(message):
     unique_identifier = hashlib.sha256(combined_metadata.encode()).hexdigest()
 
     return unique_identifier
+
+async def send_temporary_warning(context, chat_id, warning_text, delete_after=60):
+    # Send the warning message
+    warning_message = await context.bot.send_message(chat_id=chat_id, text=warning_text, parse_mode='Markdown')
+    
+    # Wait for 'delete_after' seconds (e.g., 60 for 1 minute)
+    await asyncio.sleep(delete_after)
+    
+    # Delete the warning message
+    try:
+        await context.bot.delete_message(chat_id=chat_id, message_id=warning_message.message_id)
+    except Exception as e:
+        print(f"Failed to delete the warning message: {e}")
+
 
 async def handle_media_message(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
     msg_type = MSG_IN_UNKNOWN
@@ -256,6 +276,7 @@ async def handle_media_message(update: object, context: ContextTypes.DEFAULT_TYP
             print("No text content found or too short.")
             return
 
+    # Now we can finally determine if the message is a duplicate & do something about it:
     if msg_type == MSG_IN_CHANNEL:
         async with channel_checksums_lock:
             if file_key:
@@ -265,8 +286,18 @@ async def handle_media_message(update: object, context: ContextTypes.DEFAULT_TYP
                 channelMsgIsDup = True 
 
         if channelMsgIsDup == True:
-            await context.bot.send_message(chat_id=chat_id, text=DUP_CHANNEL_MSG, parse_mode='Markdown')
-            print("DUPLICATE in channel! User notified.")
+            print("DUPLICATE in channel!")
+            if OpMode == MODE_WARN:
+                asyncio.create_task(send_temporary_warning(context, chat_id, DUP_CHANNEL_MSG))
+
+            if OpMode == MODE_DELETE:
+                try:
+                    await context.bot.delete_message(chat_id=chat_id, message_id=message.message_id)
+                    asyncio.create_task(send_temporary_warning(context, chat_id, DUP_CHANNEL_MSG))
+                    print("Duplicate CHANNEL message deleted.")
+                except Exception as e:
+                    print(f"Failed to delete the CHANNEL message or warn users: {e}")
+
         else:
             # Store the checksum or URL for future reference
             async with channel_checksums_lock:
@@ -286,8 +317,18 @@ async def handle_media_message(update: object, context: ContextTypes.DEFAULT_TYP
                 chatMsgIsDup = True 
 
         if chatMsgIsDup == True:
-            await context.bot.send_message(chat_id=chat_id, text=DUP_CHAT_MSG, parse_mode='Markdown')
-            print("DUPLICATE in chat! User notified.")
+            print("DUPLICATE in chat!")
+            if OpMode == MODE_WARN:
+                asyncio.create_task(send_temporary_warning(context, chat_id, DUP_CHAT_MSG))
+    
+            if OpMode == MODE_DELETE:
+                try:
+                    await context.bot.delete_message(chat_id=chat_id, message_id=message.message_id)
+                    asyncio.create_task(send_temporary_warning(context, chat_id, DUP_CHAT_MSG))
+                    print("Duplicate CHAT message deleted.")
+                except Exception as e:
+                    print(f"Failed to delete the CHAT message or warn users: {e}")
+
         else:
             # Store the checksum or URL for future reference
             async with chat_checksums_lock:
@@ -307,18 +348,28 @@ def get_bot_user_id():
     else:
         return "Error: Couldn't fetch bot information"
 
-
 def main():
     """Start the bot."""
     application = Application.builder().token(BotToken).build()
     MyUserID = get_bot_user_id()
     print(f"Bot's user ID: {MyUserID}")
 
+    print("Operation mode: ", end="")
+    if OpMode == MODE_WATCH:
+        print("watch")
+    elif OpMode == MODE_WARN:
+        print("warn")
+    elif OpMode == MODE_DELETE:
+        print("delete")
+    else:
+        print("Unknown mode")
+        return
+
     print("Listening.. (Ctrl+C to end)")
 
     application.add_handler(MessageHandler(filters.PHOTO | filters.VIDEO | filters.Document.ALL | filters.Entity("url") | filters.Entity("text_link") | filters.TEXT, handle_media_message))
 
-    #NB. this is asycnchronous and can create multiple event loops, one per message coming in
+    #NB. this is asycnchronous and can create multiple event loops, one per message coming in so we need to ensure locking of global dictionaries when accessing to avoide race conditions or other strange stuff...
     # Start the Bot
     application.run_polling()
 

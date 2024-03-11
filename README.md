@@ -43,14 +43,24 @@ This Python script introduces a Telegram bot designed to identify and notify abo
 
 5. **Configuration**: The bot's behavior can be adjusted by setting environment variables or passing arguments directly. Relevant parameters include `MIN_TEXT_LENGTH` and `MAX_LIST_ENTRIES` for tuning the bot's sensitivity and memory usage.
 
-7. **Run the Bot**: Execute the script. The bot will start listening for messages, identifying duplicates based on configured thresholds. It uses https, so it does not require any special port to be opened.
+7. **Run the Bot**: Execute the script with the necessary command-line arguments to start the bot. It will begin monitoring messages, identifying duplicates based on configured thresholds. The bot communicates over HTTPS, eliminating the need for special port configurations. The command-line parameters required to run the bot are as follows:
+
+    - `--token`: Your Telegram Bot Token obtained from BotFather. This is essential for authenticating requests with the Telegram API.
+    - `--channel`: The username of the Telegram channel where the bot will monitor for duplicate messages. Exclude the "@" symbol from the username.
+    - `--chat`: The username of the Telegram chat (or group chat) for duplicate monitoring. Do not include the "@" symbol.
+    - `--opmode`: Sets the operation mode of the bot. Acceptable values are 0, 1, or 2, where 0 is for watch mode (monitoring only), 1 is for warn mode (sending warnings about duplicates), and 2 is for delete mode (automatically deleting duplicates and warning the user).
+
+   To start the bot with these parameters, use the following command format:
+
+   ```sh
+   python TelegramDeDup.py --token YOUR_BOT_TOKEN_HERE --channel YOUR_CHANNEL_USERNAME --chat YOUR_CHAT_USERNAME --opmode OPERATION_MODE
 
 ## How It Works
 
 - The bot distinguishes between channel and chat messages, applying separate duplicate checks for each context.
 - For media messages (photos, videos, documents), metadata is used to generate a unique identifier. If potential duplication is detected, the bot may download the file to confirm.
 - For text messages, the bot simplifies the content by removing non-alphanumeric characters and converts to lowercase for case-insensitive comparison. A hash of this simplified text is then used for duplication checking.
-- When a duplicate is identified, the bot sends a warning message to the relevant chat or channel, advising against reposting similar content.
+- When a duplicate is identified, the bot can (depending on mode) send a warning message to the relevant chat or channel, advising against reposting similar content. The bot attempts to delete this warning message after 60 seconds. It can also delete the offending source message, again depending on the mode.
 
 ## Security and Privacy
 
@@ -64,17 +74,6 @@ This Python script introduces a Telegram bot designed to identify and notify abo
 
 For more information on the Telegram Bot API and the python-telegram-bot library, consult the [official documentation](https://docs.python-telegram-bot.org/).
 
-## Running the Bot
-
-Execute the script with the necessary command-line arguments for your bot token, channel username, and chat username. Use the following format:
-
-```sh
-python chk4dups.py --token YOUR_BOT_TOKEN_HERE --channel YOUR_CHANNEL_USERNAME --chat YOUR_CHAT_USERNAME
-```
-
-Replace `YOUR_BOT_TOKEN_HERE`, `YOUR_CHANNEL_USERNAME`, and `YOUR_CHAT_USERNAME` with the actual bot token, channel username, and chat username respectively.
-
-
 ## License
 
-This project is licensed under the MIT No Attribution license, a 'do anything' license.
+This project is licensed under the MIT No Attribution license, a 'do anything' license. Usage is 'caveat emptor'.
